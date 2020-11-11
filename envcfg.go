@@ -5,9 +5,10 @@
 //
 // Example structure:
 //
-// The only expected tag arguments are as follows (`envcfg:"tag0,tag1"`):
+// The only expected tag arguments are as follows (`envcfg:"tag0,tag1,tag2"`):
 //  tag0 -  The first tag item is the key name to look for in the env file.
 //  tag1 -  The second tag item is an optional command like "required".
+//  tag2 -  The default value for the field, if speicfied.
 package envcfg
 
 import (
@@ -20,8 +21,8 @@ import (
 
 // parseTag takes a cfg tag and returns the Key we are looking for and a boolean
 // to indicate if the key is a required value or not.
-func parseTag(tag string) (string, bool) {
-	key, req := "", false
+func parseTag(tag string) (string, bool, string) {
+	key, req, def := "", false, ""
 	items := strings.Split(tag, ",")
 	if len(items) >= 1 {
 		key = items[0]
@@ -29,7 +30,10 @@ func parseTag(tag string) (string, bool) {
 	if len(items) >= 2 {
 		req = (strings.ToLower(items[1]) == "required")
 	}
-	return key, req
+	if len(items) >= 3 {
+		def = items[2]
+	}
+	return key, req, def
 }
 
 // Load populates a config structure from the OS env.
@@ -38,7 +42,7 @@ func Load(v interface{}) error {
 	for i := 0; i < val.NumField(); i++ {
 		vf := val.Field(i)
 		tf := val.Type().Field(i)
-		key, req := parseTag(tf.Tag.Get("envcfg"))
+		key, req, def := parseTag(tf.Tag.Get("envcfg"))
 		if len(key) == 0 && req {
 			key = tf.Name
 		}
@@ -46,6 +50,9 @@ func Load(v interface{}) error {
 		// Look for the key in the json map if its a valid tag.
 		if len(key) > 0 {
 			value := os.Getenv(key)
+			if value == "" && def != "" {
+				value = def
+			}
 			if req && value == "" {
 				return fmt.Errorf("missing required field in env (%v)", key)
 			}

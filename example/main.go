@@ -12,6 +12,7 @@ import (
 type Config struct {
 	A string `envcfg:"A"`
 	B int    `envcfg:"B,required"`
+	C string `envcfg:"C,,FOOBAR"`
 }
 
 func main() {
@@ -22,6 +23,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("A: %s\n", config.A)
-	fmt.Printf("B: %d\n", config.B)
+	fmt.Printf("A: %v\n", config.A)
+	fmt.Printf("B: %v\n", config.B)
+	fmt.Printf("C: %v\n", config.C)
 }
